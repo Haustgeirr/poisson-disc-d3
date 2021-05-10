@@ -7,6 +7,30 @@
   <body>
     <h1>Poisson Disc Sampling</h1>
     <div id="root"></div>
+    <form>
+      <div>
+        <input
+          type="radio"
+          id="alg-type1"
+          name="poisson-disc"
+          value="0"
+          checked
+        />
+        <label for="alg-type1">Random</label>
+
+        <input type="radio" id="agl-type2" name="poisson-disc" value="1" />
+        <label for="agl-type2">Poisson Slow</label>
+
+        <input type="radio" id="alg-type3" name="poisson-disc" value="2" />
+        <label for="alg-type3">Poisson Fast</label>
+      </div>
+      <input type="checkbox" id="grid" name="grid" value="grid" checked />
+      <label>Grid</label>
+    </form>
+    <!-- <button id="random">Random</button> -->
+    <!-- <button id="poisson-slow">Poisson Slow</button> -->
+    <!-- <button id="poisson-fast">Poisson Fast</button> -->
+    <button id="start">Start</button>
     <script src="https://d3js.org/d3.v5.js"></script>
     <script src="./js/poisson-disc.js"></script>
   </body>

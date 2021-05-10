@@ -1,4 +1,3 @@
-const numPoints = 2000;
 const radius = 40;
 const cellSize = radius / Math.sqrt(2);
 const samplesBeforeRejection = 100;
@@ -11,6 +10,8 @@ const grid = [cellsX * cellsY];
 const xMid = width * 0.5;
 const yMid = height * 0.5;
 const points = [];
+
+let timer;
 
 const canvas = d3
   .select('#root')
@@ -26,19 +27,51 @@ context.lineWidth = 1;
 context.strokeStyle = '#cccccc';
 context.fillStyle = '#333333';
 
-// RandomPoints();
-PoissonDiscSlow();
-drawGrid();
+draw();
+
+document.getElementById('start').onclick = () => {
+  draw();
+};
+
+// TODO put all algos in timer
+// TODO sort out timer start/stop
+// TODO poisson-fast
+// add tailwind style
+
+function draw() {
+  // timer.stop();
+  clear();
+  if (document.getElementById('grid').checked) drawGrid();
+
+  const selection = getSelection();
+
+  switch (selection) {
+    case '0': {
+      randomPoints();
+      break;
+    }
+    case '1': {
+      poissonDiscSlow();
+      break;
+    }
+    case '2': {
+      poissonDiscFast();
+      break;
+    }
+    default:
+      break;
+  }
+}
 
 // Fast Poisson Disk Sampling in Arbitrary Dimensions by Robert Bridson
 // https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-function PoissonDiscFast() {}
+function poissonDiscFast() {}
 
-function PoissonDiscSlow() {
+function poissonDiscSlow() {
   const candidatePoints = [];
   candidatePoints.push({ x: width / 2, y: height / 2 });
 
-  const t = d3.timer(() => {
+  timer = d3.timer(() => {
     const index = (Math.random() * (candidatePoints.length - 1)) | 0;
     let newPointIsValid = false;
 
@@ -67,7 +100,7 @@ function PoissonDiscSlow() {
       candidatePoints.splice(index, 1);
     }
 
-    if (candidatePoints.length <= 0) t.stop();
+    if (candidatePoints.length <= 0) timer.stop();
   });
 
   function isValidPoint(newPoint) {
@@ -90,18 +123,10 @@ function PoissonDiscSlow() {
   }
 }
 
-function sqrDistance(pointA, pointB) {
-  return Math.pow(pointA.x - pointB.x, 2) + Math.pow(pointA.y - pointB.y, 2);
-}
-
-function addPoint(arr, point) {
-  arr.push({ x: point.x, y: point.y });
-}
-
 function randomPoints() {
   context.fillStyle = '#333333';
 
-  for (let i = 0; i < numPoints; i++) {
+  for (let i = 0; i < 640; i++) {
     const x = Math.random() * width;
     const y = Math.random() * height;
 
@@ -131,5 +156,25 @@ function drawGrid() {
     context.moveTo(0, y);
     context.lineTo(width, y);
     context.stroke();
+  }
+}
+
+function sqrDistance(pointA, pointB) {
+  return Math.pow(pointA.x - pointB.x, 2) + Math.pow(pointA.y - pointB.y, 2);
+}
+
+function addPoint(arr, point) {
+  arr.push({ x: point.x, y: point.y });
+}
+
+function clear() {
+  context.clearRect(0, 0, width, height);
+}
+
+function getSelection() {
+  const radios = document.getElementsByName('poisson-disc');
+
+  for (let i = 0; i < radios.length; i++) {
+    if (radios[i].checked) return radios[i].value;
   }
 }
