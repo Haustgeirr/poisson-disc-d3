@@ -1,17 +1,17 @@
-const radius = 40;
+const radius = 30;
 const cellSize = radius / Math.sqrt(2);
 const samplesBeforeRejection = 100;
 const ratio = window.devicePixelRatio || 1;
-const cellsX = Math.round(800 / cellSize) * ratio;
-const cellsY = Math.round(450 / cellSize) * ratio;
+const cellsX = Math.round(1280 / cellSize) * ratio;
+const cellsY = Math.round(640 / cellSize) * ratio;
 const width = cellsX * cellSize;
 const height = cellsY * cellSize;
-const grid = [cellsX * cellsY];
+// const grid = [cellsX * cellsY];
 const xMid = width * 0.5;
 const yMid = height * 0.5;
-const points = [];
 
 let timer;
+let startTime = 0;
 
 const canvas = d3
   .select('#root')
@@ -33,17 +33,17 @@ document.getElementById('start').onclick = () => {
   draw();
 };
 
-// TODO put all algos in timer
-// TODO sort out timer start/stop
 // TODO poisson-fast
 // add tailwind style
 
 function draw() {
-  // timer.stop();
   clear();
+  document.getElementById('message').innerText = '...';
   if (document.getElementById('grid').checked) drawGrid();
 
   const selection = getSelection();
+  if (timer) timer.stop();
+  startTime = 0;
 
   switch (selection) {
     case '0': {
@@ -51,11 +51,7 @@ function draw() {
       break;
     }
     case '1': {
-      poissonDiscSlow();
-      break;
-    }
-    case '2': {
-      poissonDiscFast();
+      poissonDisc();
       break;
     }
     default:
@@ -63,47 +59,104 @@ function draw() {
   }
 }
 
-// Fast Poisson Disk Sampling in Arbitrary Dimensions by Robert Bridson
-// https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
-function poissonDiscFast() {}
-
-function poissonDiscSlow() {
+function poissonDisc() {
   const candidatePoints = [];
+  const points = [];
+  const gridWidth = Math.ceil(width / cellSize);
+  const gridHeight = Math.ceil(height / cellSize);
+  const grid = [];
+  let finished = false;
+
   candidatePoints.push({ x: width / 2, y: height / 2 });
 
-  timer = d3.timer(() => {
-    const index = (Math.random() * (candidatePoints.length - 1)) | 0;
-    let newPointIsValid = false;
+  timer = new d3.timer((e) => {
+    if (finished) {
+      timer.stop();
+      document.getElementById('message').innerText =
+        'Generated ' + points.length + ' points.';
+      return;
+    }
 
-    for (let k = 0; k < samplesBeforeRejection; k++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = Math.random() * 2 * radius + radius;
+    const start = Date.now();
 
-      const newPoint = {
-        x: candidatePoints[index].x + r * Math.cos(a),
-        y: candidatePoints[index].y + r * Math.sin(a),
-      };
+    while (!finished && Date.now() - start < 15) {
+      const index = (Math.random() * (candidatePoints.length - 1)) | 0;
+      let newPointIsValid = false;
 
-      if (isValidPoint(newPoint)) {
-        points.push(newPoint);
-        candidatePoints.push(newPoint);
-        newPointIsValid = true;
+      for (let k = 0; k < samplesBeforeRejection; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * 2 * radius + radius;
 
-        context.beginPath();
-        context.arc(newPoint.x, newPoint.y, 3, 0, 2 * Math.PI);
-        context.fill();
+        const newPoint = {
+          x: candidatePoints[index].x + r * Math.cos(a),
+          y: candidatePoints[index].y + r * Math.sin(a),
+        };
 
-        break;
+        if (isValidPoint(newPoint, points)) {
+          points.push(newPoint);
+          candidatePoints.push(newPoint);
+          const gridIndex =
+            gridWidth * ((newPoint.y / cellSize) | 0) +
+            ((newPoint.x / cellSize) | 0);
+
+          grid[gridIndex] = newPoint;
+
+          newPointIsValid = true;
+
+          context.beginPath();
+          context.arc(newPoint.x, newPoint.y, 3, 0, 2 * Math.PI);
+          context.fill();
+
+          break;
+        }
       }
-    }
-    if (!newPointIsValid) {
-      candidatePoints.splice(index, 1);
-    }
 
-    if (candidatePoints.length <= 0) timer.stop();
+      if (!newPointIsValid) {
+        candidatePoints.splice(index, 1);
+      }
+
+      if (candidatePoints.length <= 0) finished = true;
+    }
   });
 
-  function isValidPoint(newPoint) {
+  // Fast Poisson Disk Sampling in Arbitrary Dimensions by Robert Bridson
+  // https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
+  function isValidPointFast(newPoint, points, grid) {
+    const gridX = (newPoint.x / cellSize) | 0;
+    const gridY = (newPoint.y / cellSize) | 0;
+    const searchStartX = Math.max(0, gridX - 2);
+    const searchStartY = Math.max(0, gridY - 2);
+    const searchEndX = Math.min(gridX + 2 + 1, gridWidth);
+    const searchEndY = Math.min(gridY + 2 + 1, gridHeight);
+
+    for (let y = searchStartY; y < searchEndY; y++) {
+      const gridRow = y * gridWidth;
+      for (let x = searchStartX; x < searchEndX; x++) {
+        const gridCell = grid[gridRow + x];
+        console.log(newPoint);
+
+        if (gridCell)
+          console.log(
+            newPoint,
+            points[gridCell],
+            sqrDistance(newPoint, points[gridCell]),
+            radius * radius
+          );
+
+        if (
+          gridCell &&
+          sqrDistance(newPoint, points[gridCell]) <= radius * radius
+        ) {
+          console.log('reject point');
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  function isValidPoint(newPoint, points) {
     if (
       newPoint.x < 0 ||
       newPoint.x >= width ||
@@ -125,24 +178,26 @@ function poissonDiscSlow() {
 
 function randomPoints() {
   context.fillStyle = '#333333';
+  const numPoints = 2400;
 
-  for (let i = 0; i < 640; i++) {
+  for (let i = 0; i < numPoints; i++) {
     const x = Math.random() * width;
     const y = Math.random() * height;
-
-    points.push({ x, y });
 
     context.beginPath();
     context.arc(x, y, 3, 0, 2 * Math.PI);
     context.fill();
   }
+
+  document.getElementById('message').innerText =
+    'Generated ' + numPoints + ' points.';
 }
 
 function drawGrid() {
   context.lineWidth = 1;
   context.strokeStyle = '#cccccc';
 
-  for (let i = 0; i < width / grid.length; i++) {
+  for (let i = 0; i < cellsX * cellsY; i++) {
     let x = i * cellSize;
     context.beginPath();
     context.moveTo(x, 0);
@@ -150,7 +205,7 @@ function drawGrid() {
     context.stroke();
   }
 
-  for (let i = 0; i < height / grid.length; i++) {
+  for (let i = 0; i < cellsX * cellsY; i++) {
     let y = i * cellSize;
     context.beginPath();
     context.moveTo(0, y);

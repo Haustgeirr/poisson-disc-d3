@@ -3,35 +3,64 @@
   <head>
     <meta charset="utf-8" />
     <title>Poisson Disc Sampling</title>
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <h1>Poisson Disc Sampling</h1>
-    <div id="root"></div>
-    <form>
-      <div>
-        <input
-          type="radio"
-          id="alg-type1"
-          name="poisson-disc"
-          value="0"
-          checked
-        />
-        <label for="alg-type1">Random</label>
-
-        <input type="radio" id="agl-type2" name="poisson-disc" value="1" />
-        <label for="agl-type2">Poisson Slow</label>
-
-        <input type="radio" id="alg-type3" name="poisson-disc" value="2" />
-        <label for="alg-type3">Poisson Fast</label>
+    <div class="container mx-auto">
+      <h1 class="text-4xl pt-4 font-semibold text-gray-900">
+        Poisson Disc Sampling
+      </h1>
+      <div id="root" class="py-8"></div>
+      <div class="flex items-center">
+        <form class="flex">
+          <div class="flex items-center">
+            <input
+              type="radio"
+              id="alg-type1"
+              name="poisson-disc"
+              value="0"
+              checked
+            />
+            <label class="ml-2 text-sm block text-gray-900" for="alg-type1"
+              >Random</label
+            >
+          </div>
+          <div class="ml-4 flex items-center">
+            <input
+              type="radio"
+              id="agl-type2"
+              name="poisson-disc"
+              value="1"
+              checked
+            />
+            <label class="ml-2 block text-sm text-gray-900" for="agl-type2"
+              >Poisson Disc</label
+            >
+          </div>
+        </form>
+        <div class="ml-8 flex items-center">
+          <input
+            class="text-gray-900"
+            type="checkbox"
+            id="grid"
+            name="grid"
+            value="grid"
+          />
+          <label class="ml-2 block text-sm text-gray-900">Draw Grid</label>
+        </div>
+        <button
+          class="flex justify-center ml-8 py-1 px-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-500 focus:outline-none"
+          id="start"
+        >
+          Generate
+        </button>
+        <div id="message" class="ml-8 text-sm text-gray-900"></div>
       </div>
-      <input type="checkbox" id="grid" name="grid" value="grid" checked />
-      <label>Grid</label>
-    </form>
-    <!-- <button id="random">Random</button> -->
-    <!-- <button id="poisson-slow">Poisson Slow</button> -->
-    <!-- <button id="poisson-fast">Poisson Fast</button> -->
-    <button id="start">Start</button>
-    <script src="https://d3js.org/d3.v5.js"></script>
-    <script src="./js/poisson-disc.js"></script>
+      <script src="https://d3js.org/d3.v5.js"></script>
+      <script src="./js/poisson-disc.js"></script>
+    </div>
   </body>
 </html>
